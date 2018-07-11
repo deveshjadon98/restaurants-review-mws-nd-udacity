@@ -1,0 +1,37 @@
+@media screen and (max-width: 480px){ 
+ .filter-options h2 {
+  width: 100%;
+ }
+ 
+ .filter-options select {
+  width: 100%;
+ }
+}
+
+@media screen and (min-width: 481px) and (max-width: 566px){ 
+  .filter-options h2 {
+    width: 20%;
+  }
+ 
+  .filter-options select {
+    width: 33%;
+  }
+}
+
+@media screen and (min-width: 567px) and (max-width: 812px){ 
+  #restaurants-list li {
+    width: 31%;
+  }
+}
+
+@media screen and (min-width: 813px) and (max-width: 1173px){ 
+  #restaurants-list li {
+    width: 20%;
+  }
+}
+
+@media screen and (min-width: 1174px){ 
+  #restaurants-list li {
+    width: 25%;
+  }
+}
