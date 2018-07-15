@@ -28,6 +28,10 @@ a:hover, a:focus {
 a img{
 	border: none 0px #fff;
 }
+a:focus, .leaflet-interactive:focus, .leaflet-map-pane:focus {
+  outline: 3px solid #5e92f3 !important;
+}
+
 h1, h2, h3, h4, h5, h6 {
   font-family: Arial, Helvetica, sans-serif;
   margin: 0 0 20px;

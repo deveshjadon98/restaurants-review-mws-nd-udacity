@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
   initMap(); // added 
   fetchNeighborhoods();
   fetchCuisines();
+  registerServiceWorker();
 });
 
 /**
@@ -157,26 +158,33 @@ fillRestaurantsHTML = (restaurants = self.restaurants) => {
  */
 createRestaurantHTML = (restaurant) => {
   const li = document.createElement('li');
-
+  li.setAttribute('tabindex','0');
   const image = document.createElement('img');
   image.className = 'restaurant-img';
   image.src = DBHelper.imageUrlForRestaurant(restaurant);
+  image.setAttribute('tabindex','0');
+  image.setAttribute('alt', 'Image of the inside of '+restaurant.name+' restaurant');
   li.append(image);
 
-  const name = document.createElement('h1');
+  const name = document.createElement('h3');
   name.innerHTML = restaurant.name;
+  name.setAttribute('tabindex','0');
   li.append(name);
 
   const neighborhood = document.createElement('p');
   neighborhood.innerHTML = restaurant.neighborhood;
+  neighborhood.setAttribute('tabindex','0');
   li.append(neighborhood);
 
   const address = document.createElement('p');
   address.innerHTML = restaurant.address;
+  address.setAttribute('tabindex','0');
   li.append(address);
 
   const more = document.createElement('a');
   more.innerHTML = 'View Details';
+  more.setAttribute('role', 'button');
++ more.setAttribute('aria-label', 'view details of ' + restaurant.name + ' restaurant');
   more.href = DBHelper.urlForRestaurant(restaurant);
   li.append(more)
 
@@ -208,4 +216,18 @@ addMarkersToMap = (restaurants = self.restaurants) => {
     self.markers.push(marker);
   });
 } */
+
+/*
+ Provide the offline support to application by using service workers
+*/
+registerServiceWorker = () => {
+  if (!navigator.serviceWorker) {
+    return;
+  }
+  navigator.serviceWorker.register('../service-worker.js').then(() => {
+    console.log('Service worker registered successfully!');
+  }).catch((error) => {
+    console.log('Error while registering service worker:', error);
+  });
+}
 
