@@ -13,6 +13,7 @@
     "grunt-contrib-copy": "~0.8.0"
   },
   "dependencies": {
-    "grunt-responsive-images": "^0.1.6"
+    "grunt-responsive-images": "^0.1.6",
+    "idb": "^2.1.3"
   }
 }

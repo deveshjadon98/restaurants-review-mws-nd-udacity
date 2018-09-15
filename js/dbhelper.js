@@ -8,46 +8,72 @@ class DBHelper {
    * Change this to restaurants.json file location on your server.
    */
   static get DATABASE_URL() {
-    const port = 3003 // Change this to your server port
-    return `http://localhost:${port}/data/restaurants.json`;
+    const port = 1337 // Change this to your server port
+    return `http://localhost:${port}/restaurants`;
   }
 
+  static setupIndexedDB() {
+		return idb.open('restaurants-database', 1, function (db) {
+			if (db.oldVersion === 0) {
+				db.createObjectStore('restaurants');
+			}
+		});
+  }
+  
+  static saveRestaurantsToIndexedDB(restaurants) {
+		return DBHelper.setupIndexedDB()
+			.then(function (db) {
+				if (!db) return;
+				const transaction = db.transaction('restaurants', 'readwrite');
+				const store = transaction.objectStore('restaurants');
+				restaurants.forEach(function (restaurant) {
+					store.put(restaurant, restaurant.id);
+				});
+				return transaction.complete;
+			});
+  }
+  
+  static fetchRestaurantsFromIndexedDB() {
+		return DBHelper.setupIndexedDB()
+			.then(function(db) {
+				if (!db) return;
+				const transaction = db.transaction('restaurants');
+				const store = transaction.objectStore('restaurants');
+				return store.getAll();
+			});
+	}
   /**
    * Fetch all restaurants.
    */
   static fetchRestaurants(callback) {
-    let xhr = new XMLHttpRequest();
-    xhr.open('GET', DBHelper.DATABASE_URL);
-    xhr.onload = () => {
-      if (xhr.status === 200) { // Got a success response from server!
-        const json = JSON.parse(xhr.responseText);
-        const restaurants = json.restaurants;
-        callback(null, restaurants);
-      } else { // Oops!. Got an error from server.
-        const error = (`Request failed. Returned status of ${xhr.status}`);
-        callback(error, null);
-      }
-    };
-    xhr.send();
+    DBHelper.fetchRestaurantsFromIndexedDB()
+    .then(restaurants => {
+      callback(null, restaurants);
+    });
+    fetch(DBHelper.DATABASE_URL)
+    .then(result => result.json())
+    .then(data => {
+      DBHelper.saveRestaurantsToIndexedDB(data);
+      callback(null, data);
+    })
+    .catch(data => {
+      // callback(null, restaurants);
+      // const error = (`Request failed. Returned status of ${data.status}`);
+    })
   }
 
   /**
    * Fetch a restaurant by its ID.
    */
   static fetchRestaurantById(id, callback) {
-    // fetch all restaurants with proper error handling.
-    DBHelper.fetchRestaurants((error, restaurants) => {
-      if (error) {
-        callback(error, null);
-      } else {
-        const restaurant = restaurants.find(r => r.id == id);
-        if (restaurant) { // Got the restaurant
-          callback(null, restaurant);
-        } else { // Restaurant does not exist in the database
-          callback('Restaurant does not exist', null);
-        }
-      }
-    });
+    fetch(`${DBHelper.DATABASE_URL}/${id}`)
+    .then(result => result.json())
+    .then(data => {
+        callback(null, data);
+    })
+    .catch(data => {
+      console.log('error', error);
+    })
   }
 
   /**
@@ -150,7 +176,7 @@ class DBHelper {
    * Restaurant image URL.
    */
   static imageUrlForRestaurant(restaurant) {
-    return (`/images/${restaurant.photograph}`);
+    return (`/images/${restaurant.photograph}-600.jpg`);
   }
 
   /**
