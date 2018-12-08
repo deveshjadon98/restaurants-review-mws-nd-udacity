@@ -3,5 +3,5 @@
 
 # editor settings
 /.vscode
-
+dist/
 /package-lock.json

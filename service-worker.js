@@ -1,16 +1,22 @@
 const staticMemory = 'restaurants-review-static';
 const dynamicMemory = 'restaurants-review-static';
 
+const htmlFiles = [
+  '/',
+  '/index.html',
+	'/restaurant.html'
+]
+
 const jsFiles = [
   'https://unpkg.com/leaflet@1.3.1/dist/leaflet.js',
-  'js/main.js',
-  'js/restaurant_info.js',
-  'js/dbhelper.js'
+  '/js/vendors.js',
+	'/js/index.js',
+	'/js/restaurant.js',
 ];
 
 const cssFiles = [
-  'https://unpkg.com/leaflet@1.3.1/dist/leaflet.css',
-  'css/styles.css'
+	'https://unpkg.com/leaflet@1.3.1/dist/leaflet.css',
+  '/css/styles.css',
 ];
 
 self.addEventListener('install', (event) => {
@@ -19,7 +25,7 @@ self.addEventListener('install', (event) => {
     caches.open(staticMemory)
     .then((cache) => {
       cache.addAll([
-        '/',
+        ...htmlFiles,
         ...cssFiles,
          ...jsFiles
       ]);
