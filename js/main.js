@@ -12,7 +12,25 @@ document.addEventListener('DOMContentLoaded', (event) => {
   fetchNeighborhoods();
   fetchCuisines();
   registerServiceWorker();
+
+  window.addEventListener('online', isOnline);
+  window.addEventListener('offline', isOffline);
 });
+
+/**
+ * Trigger notification when restaurant reviews page is online.
+ */
+const isOnline = (event) => {
+  Toast.showToast('Application Is Now Online, Sync Will Continue.');
+  syncFavoriteRestaurantsWithServer();
+};
+
+/**
+ * Trigger notification when restaurant reviews page is offline.
+ */
+const isOffline = (event) => {
+  Toast.showToast('Application Is Offline, Your Data Has Been Saved For Background Sync.');
+};
 
 /**
  * Fetch all neighborhoods and set their HTML.
@@ -174,12 +192,12 @@ const createRestaurantHTML = (restaurant) => {
   const neighborhood = document.createElement('p');
   neighborhood.innerHTML = restaurant.neighborhood;
   neighborhood.setAttribute('tabindex','0');
-  li.append(neighborhood);
+  // li.append(neighborhood);
 
   const address = document.createElement('p');
   address.innerHTML = restaurant.address;
   address.setAttribute('tabindex','0');
-  li.append(address);
+  // li.append(address);
 
   const more = document.createElement('a');
   more.innerHTML = 'View Details';
@@ -188,8 +206,59 @@ const createRestaurantHTML = (restaurant) => {
   more.href = DBHelper.urlForRestaurant(restaurant);
   li.append(more)
 
+  const favorite = document.createElement('span');
+  favorite.className = 'card-action-favorite';
+  favorite.dataset.id = restaurant.id;
+  favorite.dataset.favorite = (restaurant.is_favorite == undefined || restaurant.is_favorite == 'undefined' || restaurant.is_favorite === false || restaurant.is_favorite === 'false') ? false : true;
+  favorite.setAttribute('aria-label', `mark ${restaurant.name} restaurant as favorite`);
+  if (favorite.dataset.favorite === 'true') {
+    favorite.innerHTML = <i class="fas fa-heart"></i>;
+  } else if (favorite.dataset.favorite === 'false') {
+    favorite.innerHTML = <i class="fal fa-heart"></i>;
+  }
+  favorite.addEventListener('click', toggleFavoriteRestaurant);
+
+  li.append(favorite);
+
   return li
 }
+
+/**
+ * Toggle restaurant as favorite.
+ */
+const toggleFavoriteRestaurant = (event) => {
+  const restaurantId = event.target.dataset.id;
+  let isFavorite = event.target.dataset.favorite;
+
+  if (isFavorite === 'false') {
+    isFavorite = 'true';
+    event.target.innerHTML = '&#10084;';
+  } else if (isFavorite === 'true') {
+    isFavorite = 'false';
+    event.target.innerHTML = '&#9825;';
+  }
+  event.target.dataset.favorite = isFavorite;
+
+  const restaurant = {
+    restaurantId: restaurantId,
+    isFavorite: isFavorite
+  };
+  DBHelper.updateFavoriteToDB(restaurant);
+};
+
+/**
+ * Synce favorite restaurants with server.
+ */
+const syncFavoriteRestaurantsWithServer = () => {
+  Promise.all(restaurantsToBeSynced.map(restaurant => {
+    DBHelper.updateFavoriteToServer(restaurant);
+  })).then(_ => {
+    Toast.showToast('Background Sync For Favorites Has Been Completed Successfully!');
+    restaurantsToBeSynced.length = 0;
+  }).catch(_ => {
+    restaurantsToBeSynced.length = 0;
+  });
+};
 
 /**
  * Add markers for current restaurants to the map.

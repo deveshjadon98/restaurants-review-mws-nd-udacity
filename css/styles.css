@@ -260,7 +260,7 @@ article, aside, canvas, details, figcaption, figure, footer, header, hgroup, men
   width: calc(50% - 70px);
 }
 #reviews-container {
-  padding: 30px 40px 80px;
+  padding: 31px;
 }
 #reviews-container h2 {
   color: #f58500;
@@ -275,12 +275,12 @@ article, aside, canvas, details, figcaption, figure, footer, header, hgroup, men
 }
 #reviews-list li {
   background-color: #fff;
-    border: 2px solid #f3f3f3;
+  border: 2px solid #f3f3f3;
   display: block;
   list-style-type: none;
   margin: 0 0 30px;
   overflow: hidden;
-  padding: 0 20px 20px;
+  padding: 10px;
   position: relative;
   width: 85%;
 }

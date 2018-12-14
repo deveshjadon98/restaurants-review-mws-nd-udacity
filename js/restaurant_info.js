@@ -4,10 +4,85 @@ var newMap;
 /**
  * Initialize map as soon as the page is loaded.
  */
-document.addEventListener('DOMContentLoaded', (event) => {  
+document.addEventListener('DOMContentLoaded', (event) => {
   initMap();
   registerServiceWorker();
+  const btnSubmitReview = document.querySelector('.btn-submit-review');
+  btnSubmitReview.addEventListener('click', createReview);
+  window.addEventListener('online', isOnline);
+  window.addEventListener('offline', isOffline);
 });
+
+/**
+ * Add review entered by user.
+ */
+const createReview = (event) => {
+  const nameField = document.querySelector('.review-form-name');
+  const ratingField = document.querySelector('.review-form-rating');
+  const commentsField = document.querySelector('.review-form-comments');
+
+  const nameValue = nameField.value;
+  const ratingValue = ratingField.value;
+  const commentsValue = commentsField.value;
+
+  // if (nameValue == null || nameValue == '' || ratingValue == null || ratingValue == '' || commentsValue == null || commentsValue == '') {
+  //   Toast.showToast('Please Fill Remaining Form Fields!');
+  //   return;
+  // }
+  const date = new Date();
+
+  const review = {
+    "restaurant_id": self.restaurant.id,
+    "name": nameValue,
+    "rating": ratingValue,
+    "comments": commentsValue,
+    "createdAt": date.getTime(),
+    "updatedAt": date.getTime()
+  };
+
+  const ul = document.getElementById('reviews-list');
+  ul.appendChild(createReviewHTML(review));
+  DBHelper.postReviewToDB(review);
+  resetReviewForm(nameField, ratingField, commentsField);
+};
+
+/**
+ * Reset review form.
+ */
+const resetReviewForm = (nameField, ratingField, commentsField) => {
+  nameField.value = '';
+  ratingField.value = '';
+  commentsField.textContent = 'Enter Comments';
+};
+
+/**
+ * Sync reviews with server.
+ */
+const syncReviewsWithServer = () => {
+  Promise.all(reviewsToBeSynced.map(review => {
+    DBHelper.createRestaurantReview(review);
+  })).then(_ => {
+    Toast.showToast('Background Sync For Reviews Has Been Completed Successfully!');
+    reviewsToBeSynced.length = 0;
+  }).catch(_ => {
+    reviewsToBeSynced.length = 0;
+  });
+};
+
+/**
+ * Trigger notification when restaurant reviews page is online.
+ */
+const isOnline = (event) => {
+  Toast.showToast('Application Is Now Online, Sync Will Continue.');
+  syncReviewsWithServer();
+};
+
+/**
+ * Trigger notification when restaurant reviews page is offline.
+ */
+const isOffline = (event) => {
+  Toast.showToast('Application Is Offline, Your Data Has Been Saved For Background Sync.');
+};
 
 /**
  * Initialize leaflet map
@@ -16,7 +91,7 @@ const initMap = () => {
   fetchRestaurantFromURL((error, restaurant) => {
     if (error) { // Got an error!
       console.error(error);
-    } else {      
+    } else {
       self.newMap = L.map('map', {
         center: [restaurant.latlng.lat, restaurant.latlng.lng],
         zoom: 16,
@@ -28,14 +103,14 @@ const initMap = () => {
         attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
           '<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
           'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
-        id: 'mapbox.streets'    
+        id: 'mapbox.streets'
       }).addTo(newMap);
       fillBreadcrumb();
       DBHelper.mapMarkerForRestaurant(self.restaurant, self.newMap);
     }
   });
-}  
- 
+}
+
 /* window.initMap = () => {
   fetchRestaurantFromURL((error, restaurant) => {
     if (error) { // Got an error!
@@ -90,7 +165,7 @@ const fillRestaurantHTML = (restaurant = self.restaurant) => {
   const image = document.getElementById('restaurant-img');
   image.className = 'restaurant-img'
   image.src = DBHelper.imageUrlForRestaurant(restaurant);
-  image.setAttribute('alt', 'Image of the inside of '+restaurant.name+' restaurant');
+  image.setAttribute('alt', 'Image of the inside of ' + restaurant.name + ' restaurant');
 
   const cuisine = document.getElementById('restaurant-cuisine');
   cuisine.innerHTML = restaurant.cuisine_type;
@@ -110,7 +185,7 @@ const fillRestaurantHoursHTML = (operatingHours = self.restaurant.operating_hour
   const hours = document.getElementById('restaurant-hours');
   for (let key in operatingHours) {
     const row = document.createElement('tr');
-    row.setAttribute('tabindex','0');
+    row.setAttribute('tabindex', '0');
     const day = document.createElement('td');
     day.innerHTML = key;
     row.appendChild(day);
@@ -128,22 +203,27 @@ const fillRestaurantHoursHTML = (operatingHours = self.restaurant.operating_hour
  */
 const fillReviewsHTML = (reviews = self.restaurant.reviews) => {
   const container = document.getElementById('reviews-container');
-  const title = document.createElement('h3');
-  title.setAttribute('tabindex','0');
-  title.innerHTML = 'Reviews';
-  container.appendChild(title);
 
-  if (!reviews) {
-    const noReviews = document.createElement('p');
-    noReviews.innerHTML = 'No reviews yet!';
-    container.appendChild(noReviews);
-    return;
-  }
-  const ul = document.getElementById('reviews-list');
-  reviews.forEach(review => {
-    ul.appendChild(createReviewHTML(review));
-  });
-  container.appendChild(ul);
+  const reviewForm = document.querySelector('.review-input');
+  const restaurantId = self.restaurant.id;
+  DBHelper.fetchRestaurantReviewsById(restaurantId)
+    .then(reviews => {
+      if (!reviews || (reviews && reviews.length === 0)) {
+        const noReviews = document.createElement('p');
+        noReviews.innerHTML = 'No reviews yet!';
+        container.insertBefore(noReviews, reviewForm);
+        return;
+      }
+      const ul = document.getElementById('reviews-list');
+      reviews.forEach(review => {
+        ul.appendChild(createReviewHTML(review));
+      });
+    })
+    .catch(_ => {
+      const noReviews = document.createElement('p');
+      noReviews.innerHTML = 'No reviews yet!';
+      container.insertBefore(noReviews, reviewForm);
+    });
 }
 
 /**
@@ -151,13 +231,13 @@ const fillReviewsHTML = (reviews = self.restaurant.reviews) => {
  */
 const createReviewHTML = (review) => {
   const li = document.createElement('li');
-  li.setAttribute('tabindex','0');
+  li.setAttribute('tabindex', '0');
   const name = document.createElement('p');
   name.innerHTML = review.name;
   li.appendChild(name);
 
   const date = document.createElement('p');
-  date.innerHTML = review.date;
+  date.innerHTML = new Date(review.updatedAt);
   li.appendChild(date);
 
   const rating = document.createElement('p');
@@ -174,7 +254,7 @@ const createReviewHTML = (review) => {
 /**
  * Add restaurant name to the breadcrumb navigation menu
  */
-const fillBreadcrumb = (restaurant=self.restaurant) => {
+const fillBreadcrumb = (restaurant = self.restaurant) => {
   const breadcrumb = document.getElementById('breadcrumb');
   const li = document.createElement('li');
   li.innerHTML = restaurant.name;
