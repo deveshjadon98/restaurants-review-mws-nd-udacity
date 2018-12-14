@@ -206,15 +206,15 @@ const createRestaurantHTML = (restaurant) => {
   more.href = DBHelper.urlForRestaurant(restaurant);
   li.append(more)
 
-  const favorite = document.createElement('span');
+  const favorite = document.createElement('button');
   favorite.className = 'card-action-favorite';
   favorite.dataset.id = restaurant.id;
   favorite.dataset.favorite = (restaurant.is_favorite == undefined || restaurant.is_favorite == 'undefined' || restaurant.is_favorite === false || restaurant.is_favorite === 'false') ? false : true;
   favorite.setAttribute('aria-label', `mark ${restaurant.name} restaurant as favorite`);
   if (favorite.dataset.favorite === 'true') {
-    favorite.innerHTML = <i class="fas fa-heart"></i>;
+    favorite.innerHTML = '&#10084;';
   } else if (favorite.dataset.favorite === 'false') {
-    favorite.innerHTML = <i class="fal fa-heart"></i>;
+    favorite.innerHTML = '&#9825;';
   }
   favorite.addEventListener('click', toggleFavoriteRestaurant);
 
